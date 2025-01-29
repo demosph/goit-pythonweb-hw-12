@@ -22,6 +22,17 @@ conf = ConnectionConfig(
 )
 
 async def send_email(email: EmailStr, username: str, host: str):
+    """
+    Sends an email to a user with a link to verify their email address.
+
+    Args:
+        email (EmailStr): The email address of the user.
+        username (str): The username of the user.
+        host (str): The host of the API.
+
+    Raises:
+        ConnectionErrors: If there is an error connecting to the email server.
+    """
     try:
         token_verification = create_email_token(data={"sub": email})
         message = MessageSchema(
@@ -37,5 +48,63 @@ async def send_email(email: EmailStr, username: str, host: str):
 
         fm = FastMail(conf)
         await fm.send_message(message, template_name="verify_email.html")
+    except ConnectionErrors as e:
+        print(e)
+
+async def send_reset_password_email(email: EmailStr, username: str, host: str, token: str):
+    """
+    Sends an email to a user with a link to reset their password.
+
+    Args:
+        email (EmailStr): The email address of the user.
+        username (str): The username of the user.
+        host (str): The host of the API.
+        token (str): The token to be used for password reset.
+
+    Raises:
+        ConnectionErrors: If there is an error connecting to the email server.
+    """
+    try:
+        message = MessageSchema(
+            subject="Reset your credentials",
+            recipients=[email],
+            template_body={
+                "host": host,
+                "username": username,
+                "token": token,
+            },
+            subtype=MessageType.html,
+        )
+
+        fm = FastMail(conf)
+        await fm.send_message(message, template_name="reset_password.html")
+    except ConnectionErrors as e:
+        print(e)
+
+async def send_new_password_email(email: EmailStr, username: str, new_password: str):
+    """Sends an email to a user with their new password.
+
+    Args:
+        email (EmailStr): The email address of the user.
+        username (str): The username of the user.
+        new_password (str): The new password of the user.
+
+    Raises:
+        ConnectionErrors: If there is an error connecting to the email server.
+    """
+    try:
+        message = MessageSchema(
+            subject="Your New Credentials",
+            recipients=[email],
+            template_body={
+                "username": username,
+                "new_password": new_password,
+            },
+            subtype=MessageType.html,
+        )
+
+        fm = FastMail(conf)
+        await fm.send_message(message, template_name="new_password.html")
+
     except ConnectionErrors as e:
         print(e)

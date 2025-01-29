@@ -1,9 +1,14 @@
 from pydantic import ConfigDict, EmailStr
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Settings(BaseSettings):
     DB_URL: str
+    REDIS_URL: str = "redis://redis:6379"
+    REDIS_TTL: int = 3600
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_SECONDS: int = 3600

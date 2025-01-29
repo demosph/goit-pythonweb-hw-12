@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.db import get_db
 from src.schemas import User
 from src.conf.config import settings
-from src.services.auth import get_current_user
+from src.services.auth import get_current_user, get_current_admin_user
 from src.services.users import UserService
 from src.services.upload_file import UploadFileService
 import logging
@@ -25,7 +25,14 @@ upload_service = UploadFileService(
 @limiter.limit("10/minute")
 async def me(request: Request, user: User = Depends(get_current_user)):
     """
-    Returns the details of the currently authenticated user.
+    Retrieves the current user's details.
+
+    Args:
+        request (Request): The FastAPI request.
+        user (User): The current user.
+
+    Returns:
+        User: The current user.
     """
     logger.info(f"User details accessed: {user.username}")
     return user
@@ -34,11 +41,22 @@ async def me(request: Request, user: User = Depends(get_current_user)):
 @router.patch("/avatar", response_model=User)
 async def update_avatar_user(
     file: UploadFile = File(...),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Updates the avatar URL for the current user.
+    Updates the avatar of the current user.
+
+    Args:
+        file (UploadFile): The new avatar image file.
+        user (User): The current user.
+        db (AsyncSession): The database session to use for the update.
+
+    Returns:
+        User: The updated user with the new avatar URL.
+
+    Raises:
+        HTTPException: If the avatar update fails.
     """
     try:
         avatar_url = upload_service.upload_file(file, user.username)

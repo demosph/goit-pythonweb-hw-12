@@ -1,6 +1,7 @@
 from datetime import datetime, date
 from typing import  Optional
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from src.database.models import UserRole
 
 class AddressBase(BaseModel):
     country: str = Field(min_length=2, max_length=50)
@@ -51,6 +52,7 @@ class User(BaseModel):
     username: str
     email: str
     avatar: str
+    role: UserRole | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -59,11 +61,18 @@ class UserCreate(BaseModel):
     username: str
     email: str
     password: str
+    role: UserRole | None
 
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
+
+
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str
+
 
 class RequestEmail(BaseModel):
     email: EmailStr

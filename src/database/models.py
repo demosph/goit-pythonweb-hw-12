@@ -1,7 +1,8 @@
+import enum
 from datetime import datetime, date
 from typing import Optional
 
-from sqlalchemy import Integer, String, Boolean, func
+from sqlalchemy import Column, Enum as SqlEnum, Integer, String, Boolean, func
 from sqlalchemy.orm import mapped_column, Mapped, DeclarativeBase, relationship
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime, Date
@@ -9,6 +10,11 @@ from sqlalchemy.sql.sqltypes import DateTime, Date
 
 class Base(DeclarativeBase):
     pass
+
+
+class UserRole(enum.Enum):
+    USER = "USER"
+    ADMIN = "ADMIN"
 
 
 class Contact(Base):
@@ -32,6 +38,13 @@ class Contact(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 
     def __repr__(self):
+        """Return a string representation of the Contact object.
+
+        The representation includes the ID, name and email of the contact.
+
+        Returns:
+            str: A string representation of the Contact object.
+        """
         return f"<Contact(id={self.id}, name={self.name}, email={self.email})>"
 
 
@@ -50,6 +63,14 @@ class Address(Base):
     )
 
     def __repr__(self):
+        """
+        Return a string representation of the Address object.
+
+        The representation includes the ID, city, and street of the address.
+
+        Returns:
+            str: A string representation of the Address object.
+        """
         return f"<Address(id={self.id}, city={self.city}, street={self.street})>"
 
 
@@ -59,8 +80,10 @@ class User(Base):
     username: Mapped[str] = mapped_column(String, unique=True)
     email: Mapped[str] = mapped_column(String, unique=True)
     hashed_password: Mapped[str] = mapped_column(String)
+    refresh_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     avatar: Mapped[str] = mapped_column(String(255), nullable=True)
     confirmed: Mapped[bool] = mapped_column(
         "confirmed", Boolean, default=False, nullable=True
     )
+    role = Column(SqlEnum(UserRole, name="user_role"), default=UserRole.USER, nullable=False)

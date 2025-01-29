@@ -11,11 +11,20 @@ from src.schemas import ContactUpdate, ContactCreate
 
 class ContactRepository:
     def __init__(self, session: AsyncSession):
+        """
+        Initialize the contact repository.
+
+        Args:
+            session (AsyncSession): The database session.
+        """
         self.db = session
 
     def _base_query(self):
         """
-        Base query for retrieving contacts.
+        Generate a base SQLAlchemy query for selecting contacts.
+
+        Returns:
+            sqlalchemy.Select: A base query for selecting contacts.
         """
         return select(Contact)
 
@@ -29,7 +38,18 @@ class ContactRepository:
         email: Optional[str] = None,
     ) -> List[Contact]:
         """
-        Retrieve a list of contacts for a specific user with optional search query and pagination.
+        Retrieves a list of contacts for the user with optional search query and pagination.
+
+        Args:
+            skip (int): The number of contacts to skip.
+            limit (int): The maximum number of contacts to return.
+            user (User): The user whose contacts to retrieve.
+            name (Optional[str]): The name to search for.
+            surname (Optional[str]): The surname to search for.
+            email (Optional[str]): The email to search for.
+
+        Returns:
+            List[Contact]: A list of contacts matching the search criteria.
         """
         filters = [Contact.user == user]  # Ensure contacts belong to the user
         if name:
@@ -52,6 +72,13 @@ class ContactRepository:
     async def get_contact_by_id(self, contact_id: int, user: User) -> Optional[Contact]:
         """
         Retrieve a single contact by ID for a specific user with related address.
+
+        Args:
+            contact_id (int): The ID of the contact to retrieve.
+            user (User): The user whose contact to retrieve.
+
+        Returns:
+            Optional[Contact]: The contact with the given ID if exists, otherwise None.
         """
         stmt = (
             self._base_query()
@@ -68,6 +95,13 @@ class ContactRepository:
     ) -> Optional[Contact]:
         """
         Retrieve a single contact by email for a specific user with related address.
+
+        Args:
+            email (str): The email address of the contact to retrieve.
+            user (User): The user whose contact to retrieve.
+
+        Returns:
+            Optional[Contact]: The contact with the given email if exists, otherwise None.
         """
         stmt = (
             self._base_query()
@@ -79,7 +113,14 @@ class ContactRepository:
 
     async def create_contact(self, body: ContactCreate, user: User) -> Contact:
         """
-        Create a new contact for a specific user with address.
+        Create a new contact for the user.
+
+        Args:
+            body (ContactCreate): The contact creation data.
+            user (User): The user creating the contact.
+
+        Returns:
+            Contact: The newly created contact.
         """
         address_data = body.address
         address = None
@@ -90,7 +131,7 @@ class ContactRepository:
         contact = Contact(
             **body.model_dump(exclude={"address"}, exclude_unset=True),
             address=address,
-            user=user
+            user_id=user.id,
         )
         self.db.add(contact)
         await self.db.commit()
@@ -99,7 +140,14 @@ class ContactRepository:
 
     async def remove_contact(self, contact_id: int, user: User) -> Optional[Contact]:
         """
-        Remove a contact by ID for a specific user.
+        Remove a contact by ID for the user.
+
+        Args:
+            contact_id (int): The ID of the contact to remove.
+            user (User): The user whose contact to remove.
+
+        Returns:
+            Optional[Contact]: The removed contact if it existed, otherwise None.
         """
         contact = await self.get_contact_by_id(contact_id, user)
         if contact:
@@ -113,7 +161,15 @@ class ContactRepository:
         self, contact_id: int, body: ContactUpdate, user: User
     ) -> Optional[Contact]:
         """
-        Update contact details for a specific user.
+        Update a contact by ID for the user.
+
+        Args:
+            contact_id (int): The ID of the contact to update.
+            body (ContactUpdate): The contact update data.
+            user (User): The user whose contact to update.
+
+        Returns:
+            Optional[Contact]: The updated contact if it existed, otherwise None.
         """
         contact = await self.get_contact_by_id(contact_id, user)
         if not contact:
@@ -137,7 +193,14 @@ class ContactRepository:
 
     async def get_upcoming_birthdays(self, user: User, days: int = 7) -> List[Contact]:
         """
-        Retrieve contacts with upcoming birthdays within a given number of days for a specific user.
+        Retrieve a list of contacts whose birthdays are in the upcoming specified number of days for a given user.
+
+        Args:
+            user (User): The user whose contacts are to be checked for upcoming birthdays.
+            days (int): The number of days ahead to check for upcoming birthdays. Defaults to 7.
+
+        Returns:
+            List[Contact]: A list of contacts with upcoming birthdays within the specified range.
         """
         today = datetime.now().date()
         upcoming_date = today + timedelta(days=days)
